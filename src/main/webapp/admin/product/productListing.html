@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Product List</title>
+    <link rel="stylesheet" type="text/css" href="../List.css">
+
+</head>
+<body>
+<a class="back-btn" href="../admin.jsp">Back</a>
+<a class="add-customer-btn" href="addProduct.html">Add Product</a>
+<table width="80%" align="center">
+    <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>description</th>
+        <th>unit</th>
+        <th>manufacturer</th>
+        <th>status</th>
+        <th>Actions</th>
+    </tr>
+    <tbody id="productList">
+    </tbody>
+</table>
+
+<script>
+    fetch('http://localhost:8080/api/products/all')
+        .then(response => response.json())
+        .then(data => {
+            const productList = document.getElementById('productList');
+            data.forEach(product => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                        <td>${product.product_id}</td>
+                        <td>${product.name}</td>
+                        <td>${product.description}</td>
+                        <td>${product.unit}</td>
+                        <td>${product.manufacturer}</td>
+                        <td>${product.status}</td>
+                        <td>
+                                <a href="addPrice.html?id=${product.product_id}">Add Price</a>
+                                <a href="detailsProduct.html?id=${product.product_id}">Details</a>
+                                <a href="updateProduct.html?id=${product.product_id}">Update</a>
+                                <a href="javascript:void(0);" onclick="deletePro(${product.product_id})">Delete</a>
+                        </td>
+                    `;
+                productList.appendChild(row);
+            });
+        });
+    const deletePro = (proId) => {
+        const confirmDelete = confirm("Are you sure you want to delete this product?");
+
+        if (confirmDelete) {
+            fetch(`http://localhost:8080/api/products/${proId}`, {
+                method: 'DELETE',
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Success:', data);
+                    alert("Delete Success");
+                    location.reload();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+    };
+</script>
+</body>
+</html>

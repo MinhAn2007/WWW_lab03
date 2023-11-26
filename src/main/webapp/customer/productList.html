@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Product List</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script></head>
+<body>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+    }
+
+    h1 {
+        text-align: center;
+        margin-top: 20px;
+    }
+
+    #productList {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        justify-content: center;
+        margin: 20px;
+    }
+
+    .product {
+        border: 1px solid #ccc;
+        padding: 10px;
+        text-align: center;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+    }
+
+    .product:hover {
+        transform: scale(1.05);
+    }
+
+    .product img {
+        max-width: 100%;
+        height: 200px;
+        object-fit: cover;
+        margin-bottom: 10px;
+    }
+
+    .price {
+        font-weight: bold;
+        color: green;
+    }
+
+    button {
+        margin-top: 10px;
+        cursor: pointer;
+        background-color: #4caf50;
+        color: #fff;
+        border: none;
+        padding: 10px;
+        text-transform: uppercase;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+        background-color: #45a049;
+    }
+    #cart {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        cursor: pointer;
+        background-color: #4caf50;
+        color: #fff;
+        border: none;
+        padding: 10px;
+        text-transform: uppercase;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+        font-size: 24px; /* Điều chỉnh kích thước của icon giỏ hàng */
+    }
+    canvas {
+        display: block;
+        margin: auto;
+        max-width: 100%;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    #cart {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-left: 50%;
+    }
+
+    #search {
+        margin-top: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #search input {
+        padding: 8px;
+        margin-right: 5px;
+    }
+
+    #search button {
+        padding: 10px; /* Adjusted padding for a larger button */
+        cursor: pointer;
+        background-color: #4caf50;
+        color: #fff;
+        border: none;
+        transition: background-color 0.3s ease;
+    }
+
+    #search button:hover {
+        background-color: #45a049;
+    }
+
+    #sortButtons {
+        margin-top: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #sortButtons button {
+        margin-right: 10px;
+    }
+    a.home-link {
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: #3498db;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 5px;
+    }
+
+    a.home-link:hover {
+        background-color: #2980b9; /* Change color on hover */
+    }
+</style>
+<a href="http://localhost:8080/" class="home-link">HOME</a>
+<h1>Product List</h1>
+<div id="sortButtons">
+    <button onclick="sortProductsByPrice()">Sort ASC</button>
+    <button onclick="sortProductsByPriceDESC()">Sort DESC</button>
+</div>
+
+<div id="search">
+    <input type="text" id="searchInput" placeholder="Enter product name">
+    <button onclick="searchProducts()">Search</button>
+</div>
+<div id="productList">
+</div>
+<button id="cart" onclick="cartS()"><i class="fas fa-shopping-cart"></i></button>
+<script>
+    var cart = [];
+    var total = 0;
+    var productList = [];
+    var displayedProducts = [];
+
+
+
+    function fetchProducts() {
+        fetch("http://localhost:8080/api/products/active")
+            .then(response => response.json())
+            .then(data => {
+                productList = data.filter(product => product.price !== 0 && product.path !== null);
+                displayedProducts = productList.map(product => ({ ...product, productDiv: null }));
+                displayProducts(displayedProducts);
+            })
+            .catch(error => console.error("Error fetching products: " + error));
+    }
+    fetchProducts()
+    function displayProducts(products) {
+        var productList = document.getElementById("productList");
+
+        productList.innerHTML = '';
+
+        products.forEach(function (product, index) {
+            var productDiv = document.createElement("div");
+            productDiv.className = "product";
+            var canvasId = `priceChart-${product.productId}`;
+            productDiv.innerHTML = `
+            <h2>${product.name}</h2>
+            <img src="${product.path}">
+            <p>Description: ${product.description}</p>
+            <p class="price"> ${product.price} $</p>
+            <button onclick="addToCart('${product.name}', '${product.price}', ${index})">Add to Cart</button>
+            <button onclick="showPriceChart('${canvasId}','${product.productId}')">View Price Chart</button>
+        `;
+            productList.appendChild(productDiv);
+
+            // Ensure displayedProducts array is populated and has the necessary length
+            if (!displayedProducts[index]) {
+                displayedProducts[index] = {};
+            }
+
+            displayedProducts[index].productDiv = productDiv;
+        });
+    }
+
+    function addToCart(productName, price, index) {
+        console.log(price)
+        const existingProduct = cart.find(item => item.name === productName);
+        if (existingProduct) {
+            existingProduct.price += parseFloat(price);
+        } else {
+            cart.push({ name: productName, price: parseFloat(price) });
+        }
+        total += parseFloat(price);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        alert("Add Success");
+    }
+    function cartS() {
+        window.location.href = 'cart.html';
+    }
+    function showPriceChart(canvasId, productIdForChart) {
+        window.location.href = `chart.html#${productIdForChart}`;
+    }
+    function searchProducts() {
+        const searchInput = document.getElementById("searchInput");
+        const searchTerm = searchInput.value.toLowerCase();
+        const filteredProducts = displayedProducts.filter(product =>
+            product.name.toLowerCase().includes(searchTerm)
+        );
+        displayProducts(filteredProducts);
+    }
+    function sortProductsByPrice() {
+        displayedProducts.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+        displayProducts(displayedProducts);
+    }
+
+    function sortProductsByPriceDESC() {
+        displayedProducts.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+        displayProducts(displayedProducts);
+    }
+</script>
+</body>
+</html>

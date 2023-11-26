@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Order Form</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input,
+        button {
+            margin-bottom: 10px;
+            padding: 8px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4caf50;
+            color: white;
+        }
+
+        button {
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>Order Form</h2>
+
+<form id="orderForm">
+    <label for="employeeList">Employee:</label>
+    <input type="text" id="employee" list="employeeList" data-id="">
+    <datalist id="employeeList"></datalist>
+
+    <label for="customerList">Customer:</label>
+    <input type="text" id="customer" list="customerList" data-id="">
+    <datalist id="customerList"></datalist>
+
+    <label for="productList">Product:</label>
+    <input type="text" id="product" list="productList" data-id="">
+    <datalist id="productList"></datalist>
+
+    <label for="quantity">Quantity:</label>
+    <input type="number" id="quantity" name="quantity" min="1" required>
+
+    <label for="note">Note:</label>
+    <input type="text" id="note">
+
+    <button type="button" onclick="addToCart()">Add to Cart</button>
+</form>
+
+<h3>Shopping Cart</h3>
+<table id="cartTable">
+    <thead>
+    <tr>
+        <th>Product</th>
+        <th>Quantity</th>
+        <th>Action</th>
+    </tr>
+    </thead>
+    <tbody id="cartBody"></tbody>
+</table>
+
+<button type="button" onclick="submitOrder()">Submit Order</button>
+
+<script>
+    let cart = [];
+
+    document.addEventListener('DOMContentLoaded', function () {
+        initializeForm();
+    });
+
+    function initializeForm() {
+        fetchAndPopulateData('http://localhost:8080/api/customers/all', 'customerList', 'id', 'name');
+        fetchAndPopulateData('http://localhost:8080/api/employee/all', 'employeeList', 'id', 'fullname');
+        fetchAndPopulateData('http://localhost:8080/api/products/active', 'productList', 'productId', 'name');
+    }
+
+    function fetchAndPopulateData(url, elementId, valueProperty, textProperty) {
+        fetch(url)
+            .then(response => response.json())
+            .then(data => populateDatalist(data, elementId, valueProperty, textProperty))
+            .catch(error => console.error('Error fetching data:', error));
+    }
+
+    function populateDatalist(data, elementId, valueProperty, textProperty) {
+        const datalist = document.getElementById(elementId);
+
+        data.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item[textProperty];
+            option.setAttribute('data-id', item[valueProperty]);
+            datalist.appendChild(option);
+        });
+    }
+
+    function addToCart() {
+        const employeeId = document.getElementById('employee').value;
+        const customerId = document.getElementById('customer').value;
+        const productId = document.getElementById('product').value;
+        const quantity = document.getElementById('quantity').value;
+        const note = document.getElementById('note').value;
+
+        if (!productId) {
+            alert('Please select a product before adding to the cart.');
+            return;
+        }
+
+        const name = document.getElementById('product').value; // Get the product name directly from the input field
+
+        const selectedEmployee = document.querySelector(`#employeeList option[value="${employeeId}"]`);
+        const selectedCustomer = document.querySelector(`#customerList option[value="${customerId}"]`);
+        const selectedProduct = document.querySelector(`#productList option[value="${productId}"]`);
+
+        const enoId = selectedEmployee ? selectedEmployee.getAttribute('data-id') : null;
+        const cusId = selectedCustomer ? selectedCustomer.getAttribute('data-id') : null;
+        const proId = selectedProduct ? selectedProduct.getAttribute('data-id') : null;
+
+        fetch(`http://localhost:8080/api/productPrices/last/${proId}`)
+            .then(response => response.json())
+            .then(priceData => {
+                const item = {
+                    cusId: cusId,
+                    orderDate: new Date().toISOString(),
+                    enoId: enoId,
+                    note: note,
+                    price: priceData,
+                    productId: proId,
+                    quantity: quantity,
+                    name: name
+                };
+
+                cart.push(item);
+                updateCartTable();
+                clearForm();
+            })
+            .catch(error => {
+                console.error('Error fetching product price:', error);
+                alert('An error occurred while fetching the product price. Please try again.');
+            });
+    }
+
+
+    function updateCartTable() {
+        const cartBody = document.getElementById('cartBody');
+        cartBody.innerHTML = '';
+
+        cart.forEach(item => {
+            const row = cartBody.insertRow();
+            row.insertCell(0).innerText = item.name;
+            row.insertCell(1).innerText = item.quantity;
+            const deleteButton = document.createElement('button');
+            deleteButton.innerText = 'Remove';
+            deleteButton.addEventListener('click', () => removeFromCart(item.productId));
+            row.insertCell(2).appendChild(deleteButton);
+        });
+    }
+
+    function removeFromCart(productId) {
+        cart = cart.filter(item => item.productId !== productId);
+        updateCartTable();
+    }
+
+    function submitOrder() {
+        if (cart.length === 0) {
+            alert('Your cart is empty. Add items before submitting.');
+            return;
+        }
+
+        const apiUrl = 'http://localhost:8080/api/orders';
+
+        fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(cart),
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json();
+                } else {
+                    return null;
+                }
+            })
+            .then(data => {
+                alert('Order submitted successfully');
+                cart = [];
+                updateCartTable();
+                clearForm();
+            })
+            .catch(error => {
+                console.error('Error submitting order:', error.message);
+                alert('An error occurred while submitting the order. Please try again.');
+            });
+    }
+
+    function clearForm() {
+        document.getElementById('employee').value = '';
+        document.getElementById('customer').value = '';
+        document.getElementById('product').value = '';
+        document.getElementById('quantity').value = '';
+        document.getElementById('note').value = '';
+    }
+</script>
+
+
+</body>
+
+</html>

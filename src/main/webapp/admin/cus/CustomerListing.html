@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Customer List</title>
+    <link rel="stylesheet" type="text/css" href="../List.css">
+
+</head>
+<body>
+<table width="80%" align="center">
+    <a class="back-btn" href="../admin.jsp">Back</a>
+    <a class="add-customer-btn" href="addCus.html">Add Customer</a>
+    <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Address</th>
+        <th>Phone</th>
+        <th>Email</th>
+        <th>Actions</th>
+    </tr>
+    <tbody id="customerList">
+    </tbody>
+</table>
+
+<script>
+    const deleteCustomer = (customerId) => {
+        const confirmDelete = confirm("Are you sure you want to delete this customer?");
+
+        if (confirmDelete) {
+            fetch(`http://localhost:8080/api/customers/${customerId}`, {
+                method: 'DELETE',
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Success:', data);
+                    alert("Delete Success");
+                    location.reload();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+    };
+
+    fetch('http://localhost:8080/api/customers/all')
+        .then(response => response.json())
+        .then(data => {
+            const customerList = document.getElementById('customerList');
+            data.forEach(customer => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                            <td>${customer.id}</td>
+                            <td>${customer.name}</td>
+                            <td>${customer.address}</td>
+                            <td>${customer.phone}</td>
+                            <td>${customer.email}</td>
+                            <td>
+                                <a href="updateCus.html?id=${customer.id}">Update</a>
+                                <a href="javascript:void(0);" onclick="deleteCustomer(${customer.id})">Delete</a>
+                            </td>
+                        `;
+                customerList.appendChild(row);
+            });
+        });
+</script>
+</body>
+</html>
