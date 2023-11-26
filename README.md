@@ -258,7 +258,7 @@ Phần front end được tích hợp sẵn vào project để cho thuận tiệ
    ![img_79.png](image/img_79.png) 
    ![img_80.png](image/img_80.png)
    
-   Nhấn nút Back để quay lại  
+   Nhấn nút Back để quay lại 
 
 3. Khi bạn nhấn vào by Emp, UI sẽ chuyển bạn đến trang thống kê theo nhân viên với khoản thời gian bạn chọn
    
