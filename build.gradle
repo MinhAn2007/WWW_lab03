@@ -8,6 +8,9 @@ version '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
+    maven {
+        url 'https://repo.eclipse.org/content/repositories/jakartaee/'
+    }
 }
 
 ext {
@@ -27,6 +30,8 @@ dependencies {
     compileOnly 'org.projectlombok:lombok:1.18.30'
     implementation 'net.datafaker:datafaker:2.0.2'
     implementation 'org.apache.httpcomponents:httpclient:4.5.14'
+    compileOnly 'javax.websocket:javax.websocket-api:1.1'
+    compileOnly 'jakarta.websocket:jakarta.websocket-api:2.2.0-M1'
 
     //for access DB
     implementation 'org.mariadb.jdbc:mariadb-java-client:3.2.0'
@@ -48,6 +53,13 @@ dependencies {
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.0'
 
     implementation 'jakarta.json:jakarta.json-api:2.1.2'
+    implementation 'org.glassfish.tyrus.bundles:tyrus-standalone-client:2.0.0-M3'
+    implementation 'jakarta.json:jakarta.json-api:2.1.2'
+    implementation 'jakarta.websocket:jakarta.websocket-api:2.0.3'
+    implementation 'javax.websocket:javax.websocket-api:1.1'
+    implementation('org.glassfish.tyrus.bundles:tyrus-standalone-client:2.0.0-M3') {
+        exclude group: 'javax.websocket', module: 'javax.websocket-api'
+    }
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:${junitVersion}")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")

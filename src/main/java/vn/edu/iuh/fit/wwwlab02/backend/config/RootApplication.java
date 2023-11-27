@@ -6,6 +6,8 @@ import vn.edu.iuh.fit.wwwlab02.backend.converts.EmployeeStatusConvert;
 import vn.edu.iuh.fit.wwwlab02.backend.converts.ProductStatusConvert;
 import vn.edu.iuh.fit.wwwlab02.backend.resources.*;
 import vn.edu.iuh.fit.wwwlab02.backend.converts.ObjectMapperContextResolver;
+import vn.edu.iuh.fit.wwwlab02.backend.socket.DatabaseChangeWebSocket;
+import vn.edu.iuh.fit.wwwlab02.backend.socket.WebSocketConfigurator;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -25,7 +27,8 @@ public class RootApplication extends Application {
         classes.add(ProductPriceResource.class);
         classes.add(EmployeeStatusConvert.class);
         classes.add(ProductStatusConvert.class);
-
+        classes.add(DatabaseChangeWebSocket.class);
+        classes.add(WebSocketConfigurator.class);
         return classes;
     }
 }
